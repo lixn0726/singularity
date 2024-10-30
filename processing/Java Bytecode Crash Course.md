@@ -41,7 +41,7 @@ operands can be 8 or 16 bits
 
 核心思想就是一个stack，把两个操作数压到栈里面，然后执行对应的指令之后，将结果留在栈中，大致如下图：
 
-![image-20241029101955966](/Users/mac/Desktop/assets/articles/assets/image-20241029101955966.png)
+![image-20241029101955966](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029101955966.png)
 
 大部分的bytecode都是这样的执行机制：take the input from the stack, put the result to the stack.
 
@@ -76,7 +76,7 @@ used to access method arguments
 
 先javac编译之后，通过javap -v可以看到对应的class文件的bytecode，如下图：
 
-![image-20241029111546638](/Users/mac/Desktop/assets/articles/assets/image-20241029111546638.png)
+![image-20241029111546638](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029111546638.png)
 
 可以看到在具体的bytecode opcodes之前，有几个参数：
 
@@ -110,7 +110,7 @@ used to access method arguments
 
 那么解析完这个版本，如果把i改成其他类型的，比如说double，是否会有点不一样呢？那么改造之后，javac、javap -v [classFile]，可以看到字节码：
 
-![image-20241029142902549](/Users/mac/Desktop/assets/articles/assets/image-20241029142902549.png)
+![image-20241029142902549](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029142902549.png)
 
 可以看到很神奇的是，stack变成了4，locals变成了3，并且方法的整体字节码指令变多了，从14行变成了17行。更加明显的是这里的很多opcode的前缀变成了d，很明显可以知道不同的数值对应不同的opcode。
 
@@ -196,7 +196,7 @@ int、double字节码的另一个明显的区别就是，对于int和double的va
 
 不过在编译成short版本之后，如图，可以看到一条i2s指令：
 
-![image-20241029184833145](/Users/mac/Desktop/assets/articles/assets/image-20241029184833145.png)
+![image-20241029184833145](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029184833145.png)
 
 实际上，在自增的这一步，也没有对应的iinc字节码，而是一个operand operation，这也是一个区别。看到i2s这一条指令：
 
@@ -208,7 +208,7 @@ int、double字节码的另一个明显的区别就是，对于int和double的va
 
 ### Constant pool
 
-![image-20241029185406833](/Users/mac/Desktop/assets/articles/assets/image-20241029185406833.png)
+![image-20241029185406833](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029185406833.png)
 
 看到上图的字节码，对应的Java代码如下：
 
@@ -244,7 +244,7 @@ int、double字节码的另一个明显的区别就是，对于int和double的va
 
 对应的bytecode如下图：
 
-![image-20241029190359144](/Users/mac/Desktop/assets/articles/assets/image-20241029190359144.png)
+![image-20241029190359144](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029190359144.png)
 
 现在都很容易理解这里的各个值了，也很容易能看懂这里的opcode，所以不解释了。
 
@@ -262,7 +262,7 @@ int、double字节码的另一个明显的区别就是，对于int和double的va
 
 其实字节码也很容易知道，不过还是截个图：
 
-![image-20241029190629979](/Users/mac/Desktop/assets/articles/assets/image-20241029190629979.png)
+![image-20241029190629979](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029190629979.png)
 
 基本没差别，就是locals和arg_size比virtual method少了1，然后多了个flag，标注为静态方法，具体原因前面也说过了。
 
@@ -280,7 +280,7 @@ int add12and13() {
 
 编译出来后，这个方法的bytecode为：
 
-![image-20241029190846104](/Users/mac/Desktop/assets/articles/assets/image-20241029190846104.png)
+![image-20241029190846104](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029190846104.png)
 
 注意到这里，第一行字节码为aload_0，也就是将local variable slot-0压到栈中，那么也就是this pointer。后面的bipush也可以理解，然后就看到这个invokevirtual，就是来调用addTwo这个virtual method，在这条opcode之前，栈里的内容从底到顶分别为：
 
@@ -314,7 +314,7 @@ class Near {
 
 主要关注getItNear，它对应的bytecode：
 
-![image-20241029191937745](/Users/mac/Desktop/assets/articles/assets/image-20241029191937745.png)
+![image-20241029191937745](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029191937745.png)
 
 看到这里，如果是private method call，对应的opcode为invokespecial。同样，如果是super method call，如下：
 
@@ -328,7 +328,7 @@ class Far extends Near {
 
 编译出来的bytecode如下：
 
-![image-20241029192705567](/Users/mac/Desktop/assets/articles/assets/image-20241029192705567.png)
+![image-20241029192705567](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029192705567.png)
 
 可以看到也是个invokespecial，只是后面的签名有点长。
 
@@ -398,11 +398,11 @@ Object create() {
 
 直接看bytecode：
 
-![image-20241029200411431](/Users/mac/Desktop/assets/articles/assets/image-20241029200411431.png)
+![image-20241029200411431](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029200411431.png)
 
 注意到这里，invokespecial之前有一个new，new实际上只是去申请内存，因为如果自己动手试一下，可以看到这个类的constant pool，这里的index=4的地方实际上是一个Class信息：
 
-![image-20241029200516155](/Users/mac/Desktop/assets/articles/assets/image-20241029200516155.png)
+![image-20241029200516155](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029200516155.png)
 
 所以，这里是根据Object这个类的信息去申请分配内存，此时还没有执行构造函数。再往下看到一个dup。
 
@@ -430,7 +430,7 @@ public int getIt() {
 
 对应的bytecode：
 
-![image-20241029201706907](/Users/mac/Desktop/assets/articles/assets/image-20241029201706907.png)
+![image-20241029201706907](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029201706907.png)
 
 很简单，也没啥说的。
 
@@ -471,9 +471,11 @@ public int getIt() {
 
 编译结果为：
 
-![image-20241029202446018](/Users/mac/Desktop/assets/articles/assets/image-20241029202446018.png)
+![image-20241029202446018](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029202446018.png)
 
-可以看到，这里会有一个exception table。而在invokevirtual之后紧跟着就是一个goto，是正常执行然后结束方法的逻辑。而根据这个exception table，如果在0-4这个区间内的opcode出现了TestExc这个异常，那么程序就会走到第7行opcode，也就是处理异常的逻辑，所以exception table：
+可以看到，这里会有一个exception table，一般可以这么理解：一般情况下，Java代码里出现try，字节码一般都会有一个exception table。
+
+而在invokevirtual之后紧跟着就是一个goto，是正常执行然后结束方法的逻辑。而根据这个exception table，如果在0-4这个区间内的opcode出现了TestExc这个异常，那么程序就会走到第7行opcode，也就是处理异常的逻辑，所以exception table：
 
 if there is *typed exception* occur between [*from*, *to*], jump into *target*。
 
@@ -485,27 +487,28 @@ TODO：后续补全一下具体的逻辑。
 
 最后，finally，假设在上面的Java代码里加一个finally，执行方法runWhateverHappen()，编译之后的bytecode：
 
-![image-20241029203020867](/Users/mac/Desktop/assets/articles/assets/image-20241029203020867.png)
+![image-20241029203020867](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029203020867.png)
 
 可以看到，多了一个finally，exception table里多了两个entry。并且在finally里的那个方法，在bytecode里面出现了三次，可以根据这个将bytecode分为三部分：
 
 - 第一部分代表正常的执行，不出现异常
 
-  ![image-20241030104229734](/Users/mac/Desktop/assets/articles/assets/image-20241030104229734.png)
+  ![image-20241030104229734](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241030104229734.png)
 
 - 第二部分代表tryItOut出现异常
 
-  ![image-20241030104403046](/Users/mac/Desktop/assets/articles/assets/image-20241030104403046.png)
+  ![image-20241030104403046](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241030104403046.png)
 
 - 最后一部分看起来比较奇怪，但是实际上，这里处理的是uncaught exception的情况
 
-  ![image-20241030104346443](/Users/mac/Desktop/assets/articles/assets/image-20241030104346443.png)
+  ![image-20241030104346443](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241030104346443.png)
 
-所以，再回头看到这段bytecode的locals=3，有点难以理解，我去查了一下对应的资料显式：
+所以，再回头看到这段bytecode的locals=3，有点难以理解，我去查了一些对应的资料，给出的解释是，对于这种包含exception处理的代码，一般JVM会在local variable slots留一些冗余的空间来保证正确的流程控制，对于这种情况的话，具体问题需要具体分析，我看了一下似乎是没有通用解释，所以这里就不展开了。不过我总结了一下，这种情况下，这些冗余的slot一般会用于：
 
-- 每个方法都有一个max_locals：
+- 保留“没有出现异常”的正常的return的值
+- 保留unexpected exception，用于最后重新抛出
 
-  the value of the max_locas item gives the number of local variables in the local variable array allocated upon invocation of this method, including the local variables used to pass parameters to the method on its invocation.
+当然这是我自己查资料总结的，不保真，但是我试了几个例子貌似是没什么太大问题的。而一般来说，JVM本身也可能会因为本身的一些优化，会自己创建一些局部变量来提高方法的运行效率，此时也会出现一些额外的slot，不过这些不是很关键，所以不再赘述。
 
-  
+
 
