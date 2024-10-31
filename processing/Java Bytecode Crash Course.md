@@ -483,8 +483,6 @@ if there is *typed exception* occur between [*from*, *to*], jump into *target*�
 
 
 
-TODO：后续补全一下具体的逻辑。
-
 最后，finally，假设在上面的Java代码里加一个finally，执行方法runWhateverHappen()，编译之后的bytecode：
 
 ![image-20241029203020867](/Users/mac/Desktop/assets/articles/github-repo/assets/image-20241029203020867.png)
@@ -510,5 +508,109 @@ TODO：后续补全一下具体的逻辑。
 
 当然这是我自己查资料总结的，不保真，但是我试了几个例子貌似是没什么太大问题的。而一般来说，JVM本身也可能会因为本身的一些优化，会自己创建一些局部变量来提高方法的运行效率，此时也会出现一些额外的slot，不过这些不是很关键，所以不再赘述。
 
+在这里想再提一下athrow这个opcode，就是用来显式抛异常的，
 
+最后想再用几个简单的例子来解释一下。
+
+### Example1
+
+Java代码如下：
+
+```java
+    public String method() {
+        String s1 = "1";
+        String s2 = "2";
+        try {
+            return s1;
+        }
+        finally {
+            return s2;
+        }
+    }
+```
+
+那么编译一下：
+
+![image-20241030221621813](/Users/mac/Desktop/assets/articles/github-repo/processing/assets/image-20241030221621813.png)
+
+重点只关注一下第10个opcode。finally指定的是return s2也就是
+
+- aload_2, areturn
+
+看到最后一个return之前的这个astore 4，他就是为了保存在return过程中可能出现的异常。将这个异常给保存到local variable slot之后，他这里就再次返回，并且可以看到exception table里面，它还制定了一个from=10, to=12，target=10的entry，就是为了保证能保留异常信息。假设第一次return，抛出了exception，然后保存到slot-4，第二次areturn成功。此时，JVM会感知到这里有一个unhandled exception，就会尝试往这个方法的caller的栈里rethrow这个异常，直到当前线程的stack全部被pop out都没有找到exception handler，那么就退出这个线程。
+
+所以，可以看出，exception table里的额外的entry是为了保证正常运行。
+
+并且，有些时候会需要额外冗余的slot来存储exception引用，特别是在查询完exception table，找到entry跳转之后，可以看到基本上都会跟着一个astore，就是为了保存这个异常，因为JVM不知道后面的opcode需不需要用到它，为了保险，它会先存起来再说。
+
+### Example2
+
+而在这个example，我会给出一个行为比较奇怪的例子：
+
+```java
+    public static int method(int i) {
+        try {
+            if (i == 0) {
+                throw new Exception();
+            }
+            return 1;
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            return 2;
+        }
+    }
+```
+
+同样，看一下编译的结果：
+
+![image-20241031093735792](/Users/mac/Desktop/assets/articles/github-repo/processing/assets/image-20241031093735792.png)
+
+在详细解释之前，首先可以猜测一下会发生什么。
+
+- 首先在8之前，都只是new Exception这里，此时的operand stack有两个operand，都是这个new出来的Exception
+
+- 11的athrow把它抛出去，去到exception table，会跳转到16，这里需要知道的是，如果在exception table找到了entry，那么此时operand stack会被清空，所以此时的operand stack被清空。
+
+  然而，另一个点在于，JVM在当前方法中找到对应的exception table entry并跳转的时候，它不仅会将此时当前方法的operand stack清空，还会再将这个exception给压入栈中，也就是说，在跳转之后，此时的operand stack只有一个exception引用。
+
+- 16的astore_1，将exception ref保留下来，一般这里可能会导致locals冗余。
+
+  分析一下这个方法的locals，首先它是静态的，所以没有this。slot-0就是参数i，slot-1显而易见是exception。
+
+- 17、18对应的就是catch里面的再次throw，不赘述
+
+- 此时会再去到exception table，跳转到19，此时的stack只有一个exception，只是被清空后再次被JVM push进去了而已
+
+- 此时的astore_2，因为slot-1存的是catch()的参数，所以需要一个另外的slot来存储这个exception，所以locals=3，slot-2存储的就是catch里面throw的异常，此时operand stack被清空
+
+- 20、21很明显的push一个常数2，然后返回退出。
+
+如此这般推理下来，我们会发现，在catch里我们期望throw出来的exception被吞掉了，从bytecode层面推理发现确实如此。所以最好不要在finally里面return，可能会导致exception莫名其妙消失。
+
+具体的可以看：https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.20.2
+
+这里就不翻译了。
+
+### Conclusion
+
+其实总结起来可能会比较简洁：
+
+1. 当代码中出现throw exception这种情况时，要知道它并不会让当前线程的当前方法栈直接poped，而是查找exception table，也就是try-catch。
+2. 不要在finally里面做return，会出现吞异常的情况，具体原因就在上面的example2里。
+
+
+
+
+
+## After all...
+
+实际上，字节码一般在工作上也用不上，但是我感觉有些时候在处理一些比较稀奇古怪的东西的时候非常有用。因为bytecode可以直观的反映出JVM的行为，了解这些总不是坏事，也算是面试的时候可以吹一下。
+
+顺便，一些数据结构如下：
+
+- local variable slots: array
+- constant pool: table
+- exception table: table
+- frame: stack
 
